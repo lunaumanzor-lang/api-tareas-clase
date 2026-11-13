@@ -18,7 +18,7 @@ def cliente_con_token():
 
 def test_health_responde_ok(cliente):
     respuesta = cliente.get("/health")
-    assert respuesta.status_code == 201
+    assert respuesta.status_code == 200
     assert respuesta.get_json() == {"estado": "ok"}
 
 
