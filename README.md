@@ -64,3 +64,4 @@ docs/           documentación del flujo de entrega
 requirements.txt       dependencias de la aplicación, con versión fija
 requirements-dev.txt   dependencias para desarrollar y probar
 ```
+Prueba de push directo
