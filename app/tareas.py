@@ -3,7 +3,7 @@
 No hay base de datos: las tareas viven mientras el proceso esté en marcha.
 """
 
-TITULO_MAXIMO = 120
+TITULO_MAXIMO = 100
 
 
 class ErrorValidacion(ValueError):
