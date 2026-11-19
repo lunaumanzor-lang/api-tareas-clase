@@ -35,5 +35,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: reporte-pruebas
-          path: reporte/
+          path: reportes/
           if-no-files-found: error
