@@ -48,9 +48,10 @@ Error: Process completed with exit code 1.
 
 ### Caso 2
 
-**Síntoma** Paso que falló primero: Publicar reporte de pruebas (los pasos anteriores, incluido Pruebas, pasaron)
+**Síntoma** (el paso que falló primero y su mensaje, copiado del log como texto):
 
 ```text
+Paso que falló primero: Publicar reporte de pruebas (los pasos anteriores, incluido Pruebas, pasaron)
 Error: No files were found with the provided path: reporte/. No artifacts will be uploaded.
 ```
 
@@ -79,4 +80,4 @@ Error: Process completed with exit code 1.
 
 ## 3. Uso de IA
 
-"No se usó IA"
+Claude (Anthropic): guía paso a paso del laboratorio, explicación de comandos y apoyo para interpretar los logs y redactar el diagnóstico.
