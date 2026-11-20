@@ -129,3 +129,23 @@ Hay tres formas, y las tres deben coincidir:
    llega al commit exacto en GitHub.
 3. **El endpoint `/version`** de la API en ejecución responde con `APP_VERSION`, que el pipeline
    fija con `--build-arg APP_VERSION="$GITHUB_SHA"`.
+
+   ### Esquema de tags de la imagen
+
+| Cuándo | Tags que se publican | Ejemplo |
+|---|---|---|
+| Cada merge a `main` | Solo el SHA del commit | `ghcr.io/lunaumanzor-lang/api-tareas-clase:c17339b...` |
+| Al subir un tag de Git que empieza con `v` | El SHA del commit **y** el nombre del tag | `...:<SHA>` y `...:v0.1.0` |
+
+Los dos tags apuntan a **la misma imagen**: el paso **Publicar tag legible** no la vuelve a construir,
+solo le agrega un segundo nombre con `docker tag` y lo sube con `docker push`. El SHA sirve para
+rastrear exactamente de qué commit salió; el tag legible (`v0.1.0`) sirve para que las personas
+hablen de versiones y para desplegar una versión concreta sin copiar un SHA de 40 caracteres.
+
+Para publicar una versión:
+
+```bash
+git switch main && git pull
+git tag v0.1.0
+git push origin v0.1.0
+```
