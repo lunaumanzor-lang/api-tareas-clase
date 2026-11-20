@@ -3,8 +3,10 @@ name: CI/CD
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
+    tags: ["v*"]
 
 jobs:
   ci:
@@ -71,3 +73,14 @@ jobs:
         env:
           IMAGEN: ${{ steps.nombre.outputs.imagen }}
         run: docker push "$IMAGEN"
+
+        
+      - name: Publicar tag legible
+        if: github.ref_type == 'tag'
+        env:
+          IMAGEN: ${{ steps.nombre.outputs.imagen }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          LEGIBLE="ghcr.io/${GITHUB_REPOSITORY,,}:${VERSION}"
+          docker tag "$IMAGEN" "$LEGIBLE"
+          docker push "$LEGIBLE"
