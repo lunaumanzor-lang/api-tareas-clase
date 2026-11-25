@@ -65,7 +65,7 @@ requirements.txt       dependencias de la aplicación, con versión fija
 requirements-dev.txt   dependencias para desarrollar y probar
 ```
 
-## Imagen de contenedor
+## Despliegue y rollback
 
 El pipeline (`.github/workflows/ci-cd.yml`) construye la imagen **una sola vez**, en el job
 `empaquetar`, y la publica en GHCR solo cuando el cambio llega a `main` (en los pull request corre
@@ -149,3 +149,42 @@ git switch main && git pull
 git tag v0.1.0
 git push origin v0.1.0
 ```
+
+### Despliegue en staging y producción
+
+Después de `empaquetar`, el pipeline despliega **la misma imagen** (la que tiene el SHA del commit) en
+dos environments de GitHub:
+
+1. **staging** (job `staging`): arranca el contenedor con
+   `docker run -d --name api -p 8080:8000 -e APP_ENV=staging <imagen>` y corre
+   `bash scripts/smoke.sh http://localhost:8080`. Si el smoke test falla, el job queda en rojo y
+   producción no corre.
+2. **produccion** (job `produccion`, `needs: [empaquetar, staging]`): el environment tiene un revisor
+   obligatorio, así que el job espera a que alguien apruebe en **Review deployments**. Después hace el
+   mismo `docker run` (con `APP_ENV=produccion`) y el mismo smoke test.
+
+Las pruebas unitarias de CI no ven el contenedor: un error de configuración del despliegue (por ejemplo,
+cambiar el `--bind` del `CMD` al puerto 5000) pasa CI y solo lo detecta el smoke test en staging.
+
+### Rollback: cuándo conviene y cómo se lanza
+
+**Cuándo conviene:** cuando una versión ya integrada en `main` falla al desplegarse (staging en rojo) o
+causa un problema después de desplegada, y hace falta **volver rápido a una versión que funcionaba**
+mientras se prepara la corrección. El rollback no arregla el código: vuelve a desplegar una imagen
+anterior, que ya está construida y probada en GHCR, sin reconstruir nada. La corrección definitiva se
+hace después **hacia adelante**, con `git revert` del commit defectuoso, por pull request, y se lleva a
+producción con aprobación.
+
+**Cómo se lanza** (workflow `.github/workflows/rollback.yml`, solo manual):
+
+1. Tener el SHA **completo** (40 caracteres) del último commit bueno de `main`. Conviene anotarlo
+   antes de integrar un cambio riesgoso: `git switch main && git pull && git log -1 --format=%H`.
+   También se puede sacar del tag de la imagen en GHCR o del `/version` de la API.
+2. En GitHub: **Actions → Rollback → Run workflow**, rama `main`, pegar el SHA y **Run workflow**.
+3. El workflow valida que el SHA tenga 40 caracteres hexadecimales en minúsculas, despliega en
+   staging la imagen `ghcr.io/lunaumanzor-lang/api-tareas-clase:<SHA>` y corre el smoke test.
+
+**Ejemplo en este repositorio:** el PR #15 cambió el `--bind` a `0.0.0.0:5000`; CI pasó, pero staging
+falló en el smoke test y producción no corrió. El rollback con el SHA `af97d9367ff49dae9152c724de2711ad568e4059`
+volvió a desplegar la versión anterior con el smoke test en verde. Después, el PR #17 hizo
+`git revert` del commit `d29f2b2` y la corrección llegó a producción con aprobación.
