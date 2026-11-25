@@ -130,7 +130,7 @@ Hay tres formas, y las tres deben coincidir:
 3. **El endpoint `/version`** de la API en ejecución responde con `APP_VERSION`, que el pipeline
    fija con `--build-arg APP_VERSION="$GITHUB_SHA"`.
 
-   ### Esquema de tags de la imagen
+### Esquema de tags de la imagen
 
 | Cuándo | Tags que se publican | Ejemplo |
 |---|---|---|
