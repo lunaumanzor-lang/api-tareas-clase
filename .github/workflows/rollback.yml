@@ -1,0 +1,35 @@
+name: Rollback
+
+# Vuelve a desplegar en staging la imagen de un commit anterior.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "SHA completo (40 caracteres) del commit cuya imagen se vuelve a desplegar"
+        required: true
+
+jobs:
+  rollback:
+    name: Rollback en staging
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validar el SHA recibido
+        env:
+          SHA: ${{ inputs.sha }}
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "SHA invalido: $SHA"; exit 1; }
+          echo "IMAGEN=ghcr.io/${GITHUB_REPOSITORY,,}:$SHA" >> "$GITHUB_ENV"
+
+      - name: Iniciar sesión en GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Desplegar la versión anterior
+        run: docker run -d --name api -p 8080:8000 -e APP_ENV=staging "$IMAGEN"
+
+      - name: Smoke test
+        run: bash scripts/smoke.sh http://localhost:8080
