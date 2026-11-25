@@ -42,4 +42,4 @@ La sección **Despliegue y rollback** del `README.md` tiene (marcar con `x` cuan
 
 ## 3. Uso de IA
 
-Claude (Anthropic): guía paso a paso del laboratorio, explicación de comandos y apoyo para interpretar los logs.
+No se uso IA
