@@ -6,6 +6,7 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   ci:
@@ -73,7 +74,6 @@ jobs:
           IMAGEN: ${{ steps.nombre.outputs.imagen }}
         run: docker push "$IMAGEN"
 
-        
       - name: Publicar tag legible
         if: github.ref_type == 'tag'
         env:
@@ -83,3 +83,46 @@ jobs:
           LEGIBLE="ghcr.io/${GITHUB_REPOSITORY,,}:${VERSION}"
           docker tag "$IMAGEN" "$LEGIBLE"
           docker push "$LEGIBLE"
+
+  staging:
+    name: Desplegar en staging
+    needs: empaquetar
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Iniciar sesión en GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Desplegar contenedor
+        env:
+          IMAGEN: ${{ needs.empaquetar.outputs.imagen }}
+        run: docker run -d --name api -p 8080:8000 -e APP_ENV=staging "$IMAGEN"
+
+      - name: Smoke test
+        run: bash scripts/smoke.sh http://localhost:8080
+
+  produccion:
+    name: Desplegar en producción
+    needs: [empaquetar, staging]
+    runs-on: ubuntu-latest
+    # El environment "produccion" tiene un revisor obligatorio: el job espera la aprobación.
+    environment: produccion
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Iniciar sesión en GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Desplegar contenedor
+        env:
+          IMAGEN: ${{ needs.empaquetar.outputs.imagen }}
+        run: docker run -d --name api -p 8080:8000 -e APP_ENV=produccion "$IMAGEN"
+
+      - name: Smoke test
+        run: bash scripts/smoke.sh http://localhost:8080
